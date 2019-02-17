@@ -1,36 +1,46 @@
 Let`s talk Spearman rank correlation
 ========================================================
-author: 
-date: 
+author: Melanie Tietje
+date: February 2019
 autosize: true
+
+
+History
+=======================================================
+left: 20%
+![](spearman.gif) 
+
+***
+
+Charles Edward Spearman (1863 – 1945) was an English psychologist.
+
+- studied "new psychology"---one that used the scientific method instead of metaphysical speculation
+- elected member of the Royal Society 1924: "[For his] pioneer work in the application of mathematical methods to the analysis of the human mind, and his original studies of correlation in this sphere."
+- feud with Karl Pearson, who also taught at the University College London (RLY?)
+
 
 Spearman rank correlation test - quick recap
 ========================================================
+left: 30%
+![](pearson_vs_spearman.png)
 
+***
 
-- Bullet 1
-- Bullet 2
-- Bullet 3
+- the non-parametric version for Pearson correlation
+- rank correlation = statistical dependence between the rankings of two variables
+- assesses how well the relationship between two variables can be described using a monotonic function
 
-Slide With Code
+Some test data
+=============================
+blabla
+
+Rho and p-values
 ========================================================
 
+[LETS EXPLORE RESULTS] (file:///home/mel/Work/analysis/spearman_stuff/all_plot.html)
 
-```r
-summary(cars)
-```
 
-```
-     speed           dist       
- Min.   : 4.0   Min.   :  2.00  
- 1st Qu.:12.0   1st Qu.: 26.00  
- Median :15.0   Median : 36.00  
- Mean   :15.4   Mean   : 42.98  
- 3rd Qu.:19.0   3rd Qu.: 56.00  
- Max.   :25.0   Max.   :120.00  
-```
 
-Slide With Plot
-========================================================
 
-![plot of chunk unnamed-chunk-2](my_first_presi_with_R-figure/unnamed-chunk-2-1.png)
+
+
