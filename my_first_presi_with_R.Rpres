@@ -4,6 +4,12 @@ author: Melanie Tietje
 date: February 2019
 autosize: true
 
+<style>
+.small-code pre code {
+  font-size: 1em;
+}
+</style>
+
 
 History
 =======================================================
@@ -19,7 +25,7 @@ Charles Edward Spearman (1863 – 1945) was an English psychologist.
 - feud with Karl Pearson, who also taught at the University College London (RLY?)
 
 
-Spearman rank correlation test - quick recap
+Spearman rank correlation test - recap
 ========================================================
 left: 30%
 ![](pearson_vs_spearman.png)
@@ -29,18 +35,170 @@ left: 30%
 - the non-parametric version for Pearson correlation
 - rank correlation = statistical dependence between the rankings of two variables
 - assesses how well the relationship between two variables can be described using a monotonic function
+- the math:  $\rho = 1 - \frac{6\sum d ^2_i}{n(n^2-1)}$
+  - $d_i$ = the difference between two ranks of each observation
+  - $n$ = number of observations
+
+
+P-value?
+========================================================
+left: 35%
+
+![](Fig4_16_OS3.png)
+
+***
+
+"The p-value is the probability of observing data at least as favorable to the alternative hypothesis as our current data set, if the null hypothesis is true" [(Open Intro Statistics)](https://www.openintro.org/stat/textbook.php)
+
+- Probability of observing this amount of correlation given there actually is no correlation (=observing by chance)
+- A small p-value (usually < 0.05) corresponds to sufficient evidence to reject $H_0$ in favor of $H_A$
+- z-statistic --> t-distribution --> p-value
+
+
 
 Some test data
-=============================
-blabla
+========================================================
+class: small-code
+```{r}
+library(magrittr)
+x <- runif(100, min = 0, max = 1) # our x variable
+start <- 10 # minimum degree variation in y
+end <- 95 # maximum degree variation in y
+
+# create data
+aval <- list()
+for(step in start:end){
+  scramble <- sample(c(1:100), step*0.01*length(x), replace = FALSE) # define which numbers to alter
+  temp <- data.frame(x=x, y=x)
+  temp$y[scramble] %<>% runif # actual randomization 
+  aval[[step]] <-list(visible = FALSE,
+                      name = paste0('v = ', step),
+                      x=x,
+                      y=temp$y,
+                      rho=cor.test(x,temp$y,method="s")$estimate[[1]],
+                      p=cor.test(x,temp$y,method="s")$p.[[1]]
+  )
+}
+```
+- creating a dataset with 2 variables, in which y is a copy of x with increasing degrees of randomization
+
+
+
+
+Some test data
+========================================================
+class: small-code
+```{r}
+load("spearman.RData")
+head(dat, 20)
+```
+
+Some test data
+========================================================
+```{r, echo=FALSE, fig.width=13, fig.height=9}
+library(ggplot2)
+ggplot(dat, aes(x=x, y=y))+
+  geom_point(alpha=.5)+
+  facet_wrap(~random)
+```
+
+
+
+Some test data - adding sample size
+========================================================
+class: small-code
+
+```{r}
+library(dplyr)
+samplesize <- c()
+rho <- c()
+p.value <- c()
+randomization <- c()
+for(j in 1:length(samples_per_group)){ # run for each samplesize
+  sub <- dat %>% # take subset from each randomization group
+    group_by(random) %>%
+    slice(sample(n(), min(samples_per_group[j], n()))) %>%
+    ungroup()
+  rho.sub <- c()
+  p.sub <- c()
+  for(i in start:end){ # calculate correlation for each randomization
+    rho <- c(rho, cor.test(sub$x[sub$random==i],sub$y[sub$random==i],
+                                   method="s")$estimate[[1]])
+    p.value <- c(p.value, cor.test(sub$x[sub$random==i],sub$y[sub$random==i],
+                               method="s")$p.[[1]])
+    randomization <- c(randomization, i)
+    samplesize <- c(samplesize, samples_per_group[j])
+  }  
+}
+all <- data.frame(rho=rho, p.value=p.value, randomization=randomization, samplesize=samplesize)
+```
+- DF with rho and p-values for each degree of randomization (=correlation) for differing sample sizes
+
+Some test data
+========================================================
+class: small-code
+```{r}
+head(all, 20)
+```
+
+
+Randomization effect on rho
+========================================================
+```{r, echo=FALSE, fig.width=10, fig.height=6}
+theme_set(theme_bw())
+## Does the connection rho~randomization change with samplesize?
+ggplot(all, aes(x=rho, y=randomization))+
+  geom_point()+
+  facet_wrap(~samplesize)
+```
+- The smaller sample size gets, the less predictable is the connection between randomization + rho
+
 
 Rho and p-values
 ========================================================
 
-[LETS EXPLORE RESULTS] (file:///home/mel/Work/analysis/spearman_stuff/all_plot.html)
+[LETS EXPLORE RESULTS](file:///home/mel/Work/analysis/spearman_stuff/all_plot.html)
+
+
+Threshold for p-values + sample size
+========================================================
+class: small-code
+left: 30%
+
+```{r, echo=FALSE, fig.width=4, fig.height=4}
+ggplot(res, aes(x=samplesize, y=smallest_significant_rho))+
+  geom_point()
+```
+
+***
+```{r}
+summary(lm(data=res, log(smallest_significant_rho)~samplesize))
+```
+
+
+Back to the sqrt(question)
+========================================================
+
+- When I got a low correlation, how do I need to change the data to lose / get significance?
+- How do I get a highly significant "non"-correlation?
+- $$\rho = 1 - \frac{6\sum d ^2_i}{n(n^2-1)}$$
+
+--> Looks like every sort of correlation gets strong if sample size is large enough 
+
+--> low significant correlations always require large sample sizes
+
+
+
+Get presentation and R scripts
+========================================================
+
+- [github.com/Eryops1](https://github.com/Eryops1/spearman_stuff)
+- [R Presentations Support](https://support.rstudio.com/hc/en-us/articles/200486468-Authoring-R-Presentations)
+- [Plotly](https://plot.ly/feed/#/)
 
 
 
 
-
-
+<!-- TO DO
+- add the math in earlier slide 
+- add the initial question-->

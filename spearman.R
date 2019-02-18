@@ -136,10 +136,9 @@ for(step in start:end){
                       p=cor.test(x,temp$y,method="s")$p.[[1]]
   )
 }
-# sample size=100
 
+# transform into dataframe
 groups <- length(seq(start, end))
-
 dat <- data.frame(x=rep(NA, groups*100), y=rep(NA, groups*100), deg=rep(NA, groups*100))
 for(i in start:end){
   if(i==start){
@@ -150,44 +149,54 @@ for(i in start:end){
   }
 }
 
-rho <- c()
-p <- c()
-scrambling <- c()
-for(i in start:end){
-  rho <- c(rho, cor.test(dat$x[dat$random==i],dat$y[dat$random==i],
-                         method="s")$estimate[[1]])
-  p <- c(p, cor.test(dat$x[dat$random==i],dat$y[dat$random==i],
-                     method="s")$p.[[1]])
-  scrambling <- c(scrambling, i)
-}
-plot(rho, p, col=scrambling)
+ggplot(dat, aes(x=x, y=y))+
+  geom_point(alpha=.5)+
+  facet_wrap(~random)
+
+# rho <- c()
+# p <- c()
+# scrambling <- c()
+# for(i in start:end){
+#   rho <- c(rho, cor.test(dat$x[dat$random==i],dat$y[dat$random==i],
+#                          method="s")$estimate[[1]])
+#   p <- c(p, cor.test(dat$x[dat$random==i],dat$y[dat$random==i],
+#                      method="s")$p.[[1]])
+#   scrambling <- c(scrambling, i)
+# }
+# plot(rho, p, col=scrambling)
 
 
 ## smaller sample sizes
-#samped_data <- dat %>% group_by(random) %>% sample_vals(size = 10) %>% ungroup()
 samples_per_group <- rev(seq(start, end, 5))
 
 samplesize <- c()
 rho <- c()
 p.value <- c()
-scrambling <- c()
-for(j in 1:length(samples_per_group)){
-  sub <- dat %>%
+randomization <- c()
+for(j in 1:length(samples_per_group)){ # run for each samplesize
+  sub <- dat %>% # take subset from each randomization group
     group_by(random) %>%
     slice(sample(n(), min(samples_per_group[j], n()))) %>%
     ungroup()
   rho.sub <- c()
   p.sub <- c()
-  for(i in start:end){
+  for(i in start:end){ # calculate correlation for each randomization
     rho <- c(rho, cor.test(sub$x[sub$random==i],sub$y[sub$random==i],
                                    method="s")$estimate[[1]])
     p.value <- c(p.value, cor.test(sub$x[sub$random==i],sub$y[sub$random==i],
                                method="s")$p.[[1]])
-    scrambling <- c(scrambling, i)
+    randomization <- c(randomization, i)
     samplesize <- c(samplesize, samples_per_group[j])
   }  
 }
-all <- data.frame(rho=rho, p.value=p.value, randomization=scrambling, samplesize=samplesize)
+all <- data.frame(rho=rho, p.value=p.value, randomization=randomization, samplesize=samplesize)
+
+# Data exploration
+## Does the connection rho~randomization change with samplesize?
+ggplot(all, aes(x=rho, y=randomization))+
+  geom_point()+
+  facet_wrap(~samplesize)
+
 
 theme_set(theme_bw())
 
@@ -200,6 +209,27 @@ allplot <- all %>%
 ggplotly(allplot)
 
 
+# calc threshold for significance
+allsub <- all[all$p.value<0.05 & all$rho>0,]
+## rho von max pvalue for each sample size (first signifikant rho value)
+#sigs <- as.numeric(tapply(allsub$p.value, allsub$samplesize, which.max))
+
+samplesize.thre <- c()
+threshold.rho <- c()
+for(i in samples_per_group){
+  temp <- subset(allsub, samplesize==i)
+  samplesize.thre <- c(samplesize.thre, i)
+  threshold.rho <- c(threshold.rho, temp$rho[which.max(temp$p.value)])
+}
+
+res <- data.frame(smallest_significant_rho=threshold.rho, samplesize=samplesize.thre)
+ggplot(res, aes(x=samplesize, y=smallest_significant_rho))+
+  geom_point()
+
+
+
+
+summary(lm(data=res, log(smallest_significant_rho)~samplesize))
 
 
 # ggplot(all, aes(x=rho, y=p.value, col=randomization))+
